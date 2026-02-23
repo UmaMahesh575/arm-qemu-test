@@ -1,0 +1,25 @@
+name: ARM QEMU Test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi qemu-system-arm gdb-multiarch make
+
+      - name: Build Project
+        run: make
+
+      - name: Run QEMU and Print Registers
+        run: |
+          qemu-system-arm -M netduinoplus2 -cpu cortex-m4 -kernel foo.elf -S -gdb tcp::1234 -nographic &
+          sleep 3
+          echo "target remote localhost:1234" > commands.gdb
+          echo "info registers" >> commands.gdb
+          echo "quit" >> commands.gdb
+          gdb-multiarch -x commands.gdb foo.elf
